@@ -71,6 +71,15 @@ export function getWebviewHtml(webview: vscode.Webview): string {
       color: var(--vscode-input-placeholderForeground);
     }
 
+    .action-bar {
+      display: flex;
+      gap: 8px;
+    }
+
+    .action-bar button {
+      flex: 1;
+    }
+
     .button-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -220,6 +229,10 @@ export function getWebviewHtml(webview: vscode.Webview): string {
   <main class="container">
     <section class="section">
       <label for="inputText">Chinese Prompt</label>
+      <div class="action-bar">
+        <button id="translateCopyButton" type="button">Translate &amp; Copy</button>
+        <button id="clearButton" type="button" class="secondary">Clear</button>
+      </div>
       <textarea id="inputText" spellcheck="false" placeholder="Enter Chinese coding prompt here..."></textarea>
     </section>
 
@@ -230,10 +243,8 @@ export function getWebviewHtml(webview: vscode.Webview): string {
 
     <section class="section">
       <div class="button-grid">
-        <button id="translateCopyButton" type="button">Translate &amp; Copy</button>
         <button id="translateOnlyButton" type="button" class="secondary">Translate Only</button>
         <button id="copyButton" type="button" class="secondary">Copy Output</button>
-        <button id="clearButton" type="button" class="secondary">Clear</button>
       </div>
       <button id="setApiKeyButton" type="button" class="secondary">Settings / Configure API Key</button>
 
