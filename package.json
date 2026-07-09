@@ -1,0 +1,131 @@
+{
+  "name": "code-prompt-translator",
+  "displayName": "Code Prompt Translator",
+  "description": "A VS Code and Cursor sidebar extension that faithfully translates Chinese coding prompts into English and copies them to the clipboard.",
+  "version": "0.1.0",
+  "publisher": "Jeffrey1799",
+  "icon": "media/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Jeffrey1799/code-prompt-translator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Jeffrey1799/code-prompt-translator/issues"
+  },
+  "homepage": "https://github.com/Jeffrey1799/code-prompt-translator#readme",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:codePromptTranslator.translatorView",
+    "onCommand:codePromptTranslator.open",
+    "onCommand:codePromptTranslator.translateCurrentPrompt",
+    "onCommand:codePromptTranslator.setApiKey",
+    "onCommand:codePromptTranslator.clearApiKey",
+    "onCommand:codePromptTranslator.copyOutput",
+    "onCommand:codePromptTranslator.clear"
+  ],
+  "main": "./dist/extension.js",
+  "scripts": {
+    "check-types": "tsc -p . --noEmit",
+    "compile": "npm run check-types && node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "vscode:prepublish": "npm run check-types && node esbuild.js --production",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.29",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.3.2",
+    "esbuild": "^0.25.5",
+    "typescript": "^5.8.3"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "codePromptTranslator.open",
+        "title": "Code Prompt Translator: Open"
+      },
+      {
+        "command": "codePromptTranslator.translateCurrentPrompt",
+        "title": "Code Prompt Translator: Translate Current Prompt"
+      },
+      {
+        "command": "codePromptTranslator.setApiKey",
+        "title": "Code Prompt Translator: Set API Key"
+      },
+      {
+        "command": "codePromptTranslator.clearApiKey",
+        "title": "Code Prompt Translator: Clear API Key"
+      },
+      {
+        "command": "codePromptTranslator.copyOutput",
+        "title": "Code Prompt Translator: Copy Output"
+      },
+      {
+        "command": "codePromptTranslator.clear",
+        "title": "Code Prompt Translator: Clear"
+      }
+    ],
+    "configuration": {
+      "title": "Code Prompt Translator",
+      "properties": {
+        "codePromptTranslator.baseUrl": {
+          "type": "string",
+          "default": "https://api.openai.com/v1",
+          "markdownDescription": "OpenAI-compatible API base URL. The extension posts to `{baseUrl}/chat/completions`."
+        },
+        "codePromptTranslator.model": {
+          "type": "string",
+          "default": "gpt-4o-mini",
+          "description": "Model name used for the OpenAI-compatible Chat Completions API."
+        },
+        "codePromptTranslator.temperature": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Temperature used for translation requests. Use 0 for deterministic translation."
+        },
+        "codePromptTranslator.appendChineseReplyInstruction": {
+          "type": "boolean",
+          "default": true,
+          "description": "Append 'Please respond and communicate with me in Chinese.' after the translated prompt."
+        },
+        "codePromptTranslator.autoCopyAfterTranslation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically copy the final prompt after translation."
+        },
+        "codePromptTranslator.requestTimeoutMs": {
+          "type": "number",
+          "default": 60000,
+          "minimum": 1000,
+          "description": "Translation request timeout in milliseconds."
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codePromptTranslator",
+          "title": "Code Prompt Translator",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "codePromptTranslator": [
+        {
+          "id": "codePromptTranslator.translatorView",
+          "name": "Translator",
+          "type": "webview"
+        }
+      ]
+    }
+  }
+}
