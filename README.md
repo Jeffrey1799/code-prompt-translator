@@ -21,6 +21,8 @@ The extension only translates and copies. It does not call Claude Code, Aider, C
 - VS Code SecretStorage for API key
 - VS Code settings for Base URL, model, temperature, and defaults
 - Keyboard shortcuts inside the webview:
+  - `Enter` (inside the Chinese Prompt input): Translate & Copy
+  - `Shift+Enter` (inside the Chinese Prompt input): Insert a new line
   - `Ctrl+Enter`: Translate & Copy
   - `Ctrl+L`: Clear input and output
 
@@ -145,7 +147,7 @@ npm run package
 This generates a file similar to:
 
 ```text
-code-prompt-translator-0.1.0.vsix
+code-prompt-translator-0.1.2.vsix
 ```
 
 ## Install VSIX
@@ -177,11 +179,13 @@ Use this checklist before publishing or sharing a build:
 7. Translate & Copy writes the final prompt to the system clipboard.
 8. Copy Output copies the manually edited output text.
 9. Clear empties both input and output.
-10. An invalid Base URL does not crash the extension and shows `Invalid Base URL`.
-11. Non-2xx API responses show useful status text such as `API error 401: ...`.
-12. Invalid JSON API responses show `Invalid JSON response`.
-13. Empty model content shows `Empty model response`.
-14. The generated VSIX installs successfully in VS Code or Cursor.
+10. Pressing `Enter` inside the Chinese Prompt textarea triggers translation & copy.
+11. Pressing `Shift+Enter` inside the Chinese Prompt textarea inserts a new line.
+12. An invalid Base URL does not crash the extension and shows `Invalid Base URL`.
+13. Non-2xx API responses show useful status text such as `API error 401: ...`.
+14. Invalid JSON API responses show `Invalid JSON response`.
+15. Empty model content shows `Empty model response`.
+16. The generated VSIX installs successfully in VS Code or Cursor.
 
 ## Privacy
 

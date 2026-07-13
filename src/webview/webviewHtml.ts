@@ -284,7 +284,7 @@ export function getWebviewHtml(webview: vscode.Webview): string {
     <section class="section">
       <label for="status">Status</label>
       <div id="status" role="status" aria-live="polite" class="info">${STATUS.ready}</div>
-      <div class="shortcut-row">Ctrl+Enter: Translate &amp; Copy · Ctrl+L: Clear</div>
+      <div class="shortcut-row">Enter: Translate &amp; Copy · Shift+Enter: New Line · Ctrl+L: Clear</div>
     </section>
   </main>
 
@@ -432,6 +432,12 @@ export function getWebviewHtml(webview: vscode.Webview): string {
       });
 
       inputText.addEventListener('input', saveState);
+      inputText.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+          event.preventDefault();
+          translate('translateAndCopy');
+        }
+      });
       outputText.addEventListener('input', saveState);
 
       appendInstructionCheckbox.addEventListener('change', function () {
