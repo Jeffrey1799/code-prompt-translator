@@ -2,7 +2,7 @@
   "name": "code-prompt-translator",
   "displayName": "Code Prompt Translator",
   "description": "A VS Code and Cursor sidebar extension that faithfully translates Chinese coding prompts into English and copies them to the clipboard.",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "publisher": "Jeffrey1799",
   "icon": "media/icon.png",
   "repository": {
