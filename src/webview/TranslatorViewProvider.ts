@@ -175,14 +175,10 @@ export class TranslatorViewProvider implements vscode.WebviewViewProvider, vscod
       'appendChineseReplyInstruction' | 'autoCopyAfterTranslation' | 'sendToTerminalAfterTranslation'
     >
   ): Promise<void> {
-    if (inputText.trim().length === 0) {
-      this.postStatus(STATUS.inputIsEmpty, true);
-      return;
-    }
+    const { commandPrefix, remainingText } = this.parseSlashCommand(inputText);
 
-    const apiKey = await this.secretService.getApiKey();
-    if (!apiKey) {
-      this.postStatus(STATUS.missingApiKey, true);
+    if (!commandPrefix && remainingText.length === 0) {
+      this.postStatus(STATUS.inputIsEmpty, true);
       return;
     }
 
@@ -194,8 +190,22 @@ export class TranslatorViewProvider implements vscode.WebviewViewProvider, vscod
     };
 
     try {
-      const translated = await this.translationService.translate(inputText, settings, apiKey);
-      const finalPrompt = this.buildFinalPrompt(translated, settings.appendChineseReplyInstruction);
+      let finalPrompt = '';
+
+      if (remainingText.length > 0) {
+        const apiKey = await this.secretService.getApiKey();
+        if (!apiKey) {
+          this.postStatus(STATUS.missingApiKey, true);
+          return;
+        }
+
+        const translated = await this.translationService.translate(remainingText, settings, apiKey);
+        const formatted = this.buildFinalPrompt(translated, settings.appendChineseReplyInstruction);
+        finalPrompt = commandPrefix ? `${commandPrefix} ${formatted}` : formatted;
+      } else if (commandPrefix) {
+        finalPrompt = commandPrefix;
+      }
+
       const shouldCopy = mode === 'translateAndCopy' || settings.autoCopyAfterTranslation;
 
       // Always write final prompt to clipboard first to support terminal paste
@@ -227,6 +237,20 @@ export class TranslatorViewProvider implements vscode.WebviewViewProvider, vscod
     } catch (error) {
       this.postStatus(this.getTranslationErrorStatus(error), true);
     }
+  }
+
+  private parseSlashCommand(input: string): { commandPrefix?: string; remainingText: string } {
+    const trimmed = input.trim();
+    const match = trimmed.match(/^(\/[a-zA-Z0-9_-]+)(?:\s+([\s\S]*))?$/);
+    if (match) {
+      return {
+        commandPrefix: match[1],
+        remainingText: match[2] ? match[2].trim() : ''
+      };
+    }
+    return {
+      remainingText: trimmed
+    };
   }
 
   private async sendToActiveTerminal(): Promise<boolean> {
