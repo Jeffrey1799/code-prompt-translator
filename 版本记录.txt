@@ -1,3 +1,6 @@
+v0.1.4 版本记录：
+- 修复终端交互问题：改用终端内括号粘贴机制（`workbench.action.terminal.paste`），解决带换行符或包含追加指令的 Prompt 填入终端时引发的误自动回车发送及多行指令丢失问题。
+
 v0.1.3 版本记录：
 - 优化人机交互与无缝全键盘工作流：翻译后自动将英文 Prompt 填充至当前活跃终端（Terminal），并自动将键盘焦点切换至终端（不自动回车执行，便于确认后按回车提交）。
 - 支持在 Webview 选项与 VS Code 设置中开启/关闭“Send to active terminal & focus”功能。
