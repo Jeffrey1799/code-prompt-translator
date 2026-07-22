@@ -233,7 +233,7 @@ export function getWebviewHtml(webview: vscode.Webview): string {
         <button id="translateCopyButton" type="button">Translate &amp; Copy</button>
         <button id="clearButton" type="button" class="secondary">Clear</button>
       </div>
-      <textarea id="inputText" spellcheck="false" placeholder="Enter Chinese coding prompt here..."></textarea>
+      <textarea id="inputText" spellcheck="false" placeholder="Enter Chinese coding prompt here... (Press Enter to translate &amp; copy)"></textarea>
     </section>
 
     <section class="section">
@@ -278,6 +278,10 @@ export function getWebviewHtml(webview: vscode.Webview): string {
         <input id="autoCopyCheckbox" type="checkbox" checked>
         <span>Auto copy after translation</span>
       </label>
+      <label class="checkbox-row" for="sendToTerminalCheckbox">
+        <input id="sendToTerminalCheckbox" type="checkbox" checked>
+        <span>Send to active terminal &amp; focus</span>
+      </label>
       <div class="hint">Translate Only still follows the auto-copy checkbox. Translate &amp; Copy always copies.</div>
     </section>
 
@@ -300,6 +304,7 @@ export function getWebviewHtml(webview: vscode.Webview): string {
       const setApiKeyButton = document.getElementById('setApiKeyButton');
       const appendInstructionCheckbox = document.getElementById('appendInstructionCheckbox');
       const autoCopyCheckbox = document.getElementById('autoCopyCheckbox');
+      const sendToTerminalCheckbox = document.getElementById('sendToTerminalCheckbox');
       const status = document.getElementById('status');
 
       const settingsPanel = document.getElementById('settingsPanel');
@@ -329,6 +334,7 @@ export function getWebviewHtml(webview: vscode.Webview): string {
           outputText: outputText.value,
           appendChineseReplyInstruction: appendInstructionCheckbox.checked,
           autoCopyAfterTranslation: autoCopyCheckbox.checked,
+          sendToTerminalAfterTranslation: sendToTerminalCheckbox.checked,
           status: status.textContent,
           isError: status.classList.contains('error'),
           settingsPanelVisible: !settingsPanel.classList.contains('hidden'),
@@ -364,7 +370,8 @@ export function getWebviewHtml(webview: vscode.Webview): string {
           text: text,
           mode: mode,
           appendChineseReplyInstruction: appendInstructionCheckbox.checked,
-          autoCopyAfterTranslation: autoCopyCheckbox.checked
+          autoCopyAfterTranslation: autoCopyCheckbox.checked,
+          sendToTerminalAfterTranslation: sendToTerminalCheckbox.checked
         });
       }
 
@@ -448,6 +455,10 @@ export function getWebviewHtml(webview: vscode.Webview): string {
         updateBooleanSetting('autoCopyAfterTranslation', autoCopyCheckbox.checked);
       });
 
+      sendToTerminalCheckbox.addEventListener('change', function () {
+        updateBooleanSetting('sendToTerminalAfterTranslation', sendToTerminalCheckbox.checked);
+      });
+
       document.addEventListener('keydown', function (event) {
         if (event.ctrlKey && event.key === 'Enter') {
           event.preventDefault();
@@ -472,6 +483,7 @@ export function getWebviewHtml(webview: vscode.Webview): string {
           case 'settings':
             appendInstructionCheckbox.checked = Boolean(message.settings.appendChineseReplyInstruction);
             autoCopyCheckbox.checked = Boolean(message.settings.autoCopyAfterTranslation);
+            sendToTerminalCheckbox.checked = Boolean(message.settings.sendToTerminalAfterTranslation);
             if (typeof message.settings.baseUrl === 'string') {
               baseUrlInput.value = message.settings.baseUrl;
             }

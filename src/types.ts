@@ -6,12 +6,14 @@ export interface TranslatorSettings {
   temperature: number;
   appendChineseReplyInstruction: boolean;
   autoCopyAfterTranslation: boolean;
+  sendToTerminalAfterTranslation: boolean;
   requestTimeoutMs: number;
 }
 
 export type BooleanSettingKey =
   | 'appendChineseReplyInstruction'
-  | 'autoCopyAfterTranslation';
+  | 'autoCopyAfterTranslation'
+  | 'sendToTerminalAfterTranslation';
 
 export type WebviewToExtensionMessage =
   | { type: 'ready' }
@@ -21,6 +23,7 @@ export type WebviewToExtensionMessage =
       mode: TranslationMode;
       appendChineseReplyInstruction: boolean;
       autoCopyAfterTranslation: boolean;
+      sendToTerminalAfterTranslation: boolean;
     }
   | { type: 'copyOutput'; text: string }
   | { type: 'clear' }

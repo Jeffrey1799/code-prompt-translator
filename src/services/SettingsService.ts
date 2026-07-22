@@ -20,6 +20,11 @@ export class SettingsService {
         'autoCopyAfterTranslation',
         DEFAULT_SETTINGS.autoCopyAfterTranslation
       ),
+      sendToTerminalAfterTranslation: this.getBoolean(
+        config,
+        'sendToTerminalAfterTranslation',
+        DEFAULT_SETTINGS.sendToTerminalAfterTranslation
+      ),
       requestTimeoutMs: this.getNumber(
         config,
         'requestTimeoutMs',

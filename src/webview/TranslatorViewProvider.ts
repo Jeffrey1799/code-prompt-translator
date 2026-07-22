@@ -110,7 +110,8 @@ export class TranslatorViewProvider implements vscode.WebviewViewProvider, vscod
       case 'translate':
         await this.handleTranslate(message.text, message.mode, {
           appendChineseReplyInstruction: message.appendChineseReplyInstruction,
-          autoCopyAfterTranslation: message.autoCopyAfterTranslation
+          autoCopyAfterTranslation: message.autoCopyAfterTranslation,
+          sendToTerminalAfterTranslation: message.sendToTerminalAfterTranslation
         });
         break;
       case 'copyOutput':
@@ -169,7 +170,10 @@ export class TranslatorViewProvider implements vscode.WebviewViewProvider, vscod
   private async handleTranslate(
     inputText: string,
     mode: TranslationMode,
-    overrides: Pick<TranslatorSettings, 'appendChineseReplyInstruction' | 'autoCopyAfterTranslation'>
+    overrides: Pick<
+      TranslatorSettings,
+      'appendChineseReplyInstruction' | 'autoCopyAfterTranslation' | 'sendToTerminalAfterTranslation'
+    >
   ): Promise<void> {
     if (inputText.trim().length === 0) {
       this.postStatus(STATUS.inputIsEmpty, true);
@@ -185,7 +189,8 @@ export class TranslatorViewProvider implements vscode.WebviewViewProvider, vscod
     const settings = {
       ...this.settingsService.getSettings(),
       appendChineseReplyInstruction: overrides.appendChineseReplyInstruction,
-      autoCopyAfterTranslation: overrides.autoCopyAfterTranslation
+      autoCopyAfterTranslation: overrides.autoCopyAfterTranslation,
+      sendToTerminalAfterTranslation: overrides.sendToTerminalAfterTranslation
     };
 
     try {
@@ -193,36 +198,45 @@ export class TranslatorViewProvider implements vscode.WebviewViewProvider, vscod
       const finalPrompt = this.buildFinalPrompt(translated, settings.appendChineseReplyInstruction);
       const shouldCopy = mode === 'translateAndCopy' || settings.autoCopyAfterTranslation;
 
-      if (!shouldCopy) {
-        this.postOrQueue({
-          type: 'translationResult',
-          output: finalPrompt,
-          copied: false,
-          status: STATUS.translationCompleted
-        });
-        return;
+      // Always write final prompt to clipboard first to support terminal paste
+      let copySuccess = false;
+      if (shouldCopy || settings.sendToTerminalAfterTranslation) {
+        try {
+          await this.clipboardService.writeText(finalPrompt);
+          copySuccess = true;
+        } catch (clipboardError) {
+          // If explicit copy requested, fail gracefully
+        }
       }
 
-      try {
-        await this.clipboardService.writeText(finalPrompt);
-        this.postOrQueue({
-          type: 'translationResult',
-          output: finalPrompt,
-          copied: true,
-          status: STATUS.translationCompletedAndCopied
-        });
-      } catch (clipboardError) {
-        this.postOrQueue({
-          type: 'translationResult',
-          output: finalPrompt,
-          copied: false,
-          status: `Translation completed, but failed to copy: ${this.getErrorMessage(clipboardError)}`,
-          isError: true
-        });
+      let sentToTerminal = false;
+      if (settings.sendToTerminalAfterTranslation) {
+        sentToTerminal = await this.sendToActiveTerminal();
       }
+
+      this.postOrQueue({
+        type: 'translationResult',
+        output: finalPrompt,
+        copied: copySuccess,
+        status: sentToTerminal
+          ? STATUS.translationCompletedCopiedAndSentToTerminal
+          : copySuccess
+          ? STATUS.translationCompletedAndCopied
+          : STATUS.translationCompleted
+      });
     } catch (error) {
       this.postStatus(this.getTranslationErrorStatus(error), true);
     }
+  }
+
+  private async sendToActiveTerminal(): Promise<boolean> {
+    const terminal = vscode.window.activeTerminal;
+    if (terminal) {
+      terminal.show(false);
+      await vscode.commands.executeCommand('workbench.action.terminal.paste');
+      return true;
+    }
+    return false;
   }
 
   private async handleCopyOutput(text: string): Promise<void> {

@@ -22,6 +22,7 @@ export const DEFAULT_SETTINGS = {
   temperature: 0,
   appendChineseReplyInstruction: true,
   autoCopyAfterTranslation: true,
+  sendToTerminalAfterTranslation: true,
   requestTimeoutMs: 60000
 } as const;
 
@@ -44,6 +45,8 @@ export const STATUS = {
   translationCompleted: 'Translation completed',
   copiedToClipboard: 'Copied to clipboard',
   translationCompletedAndCopied: 'Translation completed and copied',
+  translationCompletedAndSentToTerminal: 'Translation completed and sent to active terminal',
+  translationCompletedCopiedAndSentToTerminal: 'Translation completed, copied & sent to terminal',
   inputIsEmpty: 'Input is empty',
   missingApiKey: 'API key is missing. Please run "Code Prompt Translator: Set API Key".',
   invalidBaseUrl: 'Invalid Base URL',
