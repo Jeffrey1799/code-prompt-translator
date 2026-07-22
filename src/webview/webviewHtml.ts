@@ -20,9 +20,13 @@ export function getWebviewHtml(webview: vscode.Webview): string {
       box-sizing: border-box;
     }
 
+    html, body {
+      height: 100%;
+    }
+
     body {
       margin: 0;
-      padding: 14px;
+      padding: 12px;
       color: var(--vscode-foreground);
       background: var(--vscode-sideBar-background);
       font-family: var(--vscode-font-family);
@@ -33,7 +37,8 @@ export function getWebviewHtml(webview: vscode.Webview): string {
     .container {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      height: 100%;
+      gap: 10px;
       min-width: 0;
     }
 
@@ -43,6 +48,16 @@ export function getWebviewHtml(webview: vscode.Webview): string {
       gap: 6px;
     }
 
+    .section.flex-grow {
+      flex: 1;
+      min-height: 120px;
+    }
+
+    .section.flex-grow textarea {
+      flex: 1;
+      min-height: 100px;
+    }
+
     label {
       font-weight: 600;
       color: var(--vscode-foreground);
@@ -50,7 +65,7 @@ export function getWebviewHtml(webview: vscode.Webview): string {
 
     textarea {
       width: 100%;
-      min-height: 168px;
+      min-height: 120px;
       resize: vertical;
       border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
       border-radius: 4px;
@@ -123,8 +138,8 @@ export function getWebviewHtml(webview: vscode.Webview): string {
     .checkboxes {
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      padding: 8px 0 0;
+      gap: 6px;
+      padding: 4px 0 0;
     }
 
     .checkbox-row {
@@ -228,20 +243,7 @@ export function getWebviewHtml(webview: vscode.Webview): string {
 <body>
   <main class="container">
     <section class="section">
-      <label for="inputText">Chinese Prompt</label>
-      <div class="action-bar">
-        <button id="translateCopyButton" type="button">Translate &amp; Copy</button>
-        <button id="clearButton" type="button" class="secondary">Clear</button>
-      </div>
-      <textarea id="inputText" spellcheck="false" placeholder="Enter Chinese coding prompt here... (Press Enter to translate &amp; copy)"></textarea>
-    </section>
-
-    <section class="section">
-      <label for="outputText">English Output</label>
-      <textarea id="outputText" spellcheck="false" placeholder="Translation output will appear here. You can edit it before copying."></textarea>
-    </section>
-
-    <section class="section">
+      <div id="status" role="status" aria-live="polite" class="info">${STATUS.ready}</div>
       <div class="button-grid">
         <button id="translateOnlyButton" type="button" class="secondary">Translate Only</button>
         <button id="copyButton" type="button" class="secondary">Copy Output</button>
@@ -282,14 +284,22 @@ export function getWebviewHtml(webview: vscode.Webview): string {
         <input id="sendToTerminalCheckbox" type="checkbox" checked>
         <span>Send to active terminal &amp; focus</span>
       </label>
-      <div class="hint">Translate Only still follows the auto-copy checkbox. Translate &amp; Copy always copies.</div>
+    </section>
+
+    <section class="section flex-grow">
+      <label for="outputText">English Output</label>
+      <textarea id="outputText" spellcheck="false" placeholder="Translation output will appear here. You can edit it before copying."></textarea>
     </section>
 
     <section class="section">
-      <label for="status">Status</label>
-      <div id="status" role="status" aria-live="polite" class="info">${STATUS.ready}</div>
-      <div class="shortcut-row">Enter: Translate &amp; Copy · Shift+Enter: New Line · Ctrl+L: Clear</div>
+      <label for="inputText">Chinese Prompt</label>
+      <div class="action-bar">
+        <button id="translateCopyButton" type="button">Translate &amp; Copy</button>
+        <button id="clearButton" type="button" class="secondary">Clear</button>
+      </div>
+      <textarea id="inputText" spellcheck="false" placeholder="Enter Chinese coding prompt here... (Press Enter to translate &amp; copy)"></textarea>
     </section>
+    <div class="shortcut-row">Enter: Translate &amp; Copy · Shift+Enter: New Line · Ctrl+L: Clear</div>
   </main>
 
   <script nonce="${nonce}">
@@ -505,8 +515,10 @@ export function getWebviewHtml(webview: vscode.Webview): string {
             setBusy(false);
             outputText.value = message.output;
             setStatus(message.status, Boolean(message.isError));
-            outputText.focus();
-            outputText.select();
+            if (!message.sentToTerminal) {
+              outputText.focus();
+              outputText.select();
+            }
             saveState();
             break;
           case 'performTranslate':

@@ -37,7 +37,7 @@ export type WebviewToExtensionMessage =
 export type ExtensionToWebviewMessage =
   | { type: 'settings'; settings: TranslatorSettings & { hasApiKey: boolean } }
   | { type: 'status'; status: string; isError?: boolean }
-  | { type: 'translationResult'; output: string; copied: boolean; status: string; isError?: boolean }
+  | { type: 'translationResult'; output: string; copied: boolean; status: string; isError?: boolean; sentToTerminal?: boolean }
   | { type: 'performTranslate'; mode: TranslationMode }
   | { type: 'performCopyOutput' }
   | { type: 'clear' };

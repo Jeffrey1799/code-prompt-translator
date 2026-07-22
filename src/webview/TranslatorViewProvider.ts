@@ -59,28 +59,26 @@ export class TranslatorViewProvider implements vscode.WebviewViewProvider, vscod
     this.flushPendingMessages();
   }
 
-  public async open(): Promise<void> {
+  public async open(preserveFocus = false): Promise<void> {
     await vscode.commands.executeCommand(`workbench.view.extension.${VIEW_CONTAINER_ID}`);
 
-    try {
-      await vscode.commands.executeCommand(`${TRANSLATOR_VIEW_ID}.focus`);
-    } catch {
-      // Some VS Code-compatible hosts may not expose the generated focus command.
+    if (this.view) {
+      this.view.show(preserveFocus);
     }
   }
 
   public async translateCurrentPrompt(): Promise<void> {
-    await this.open();
+    await this.open(true);
     this.postOrQueue({ type: 'performTranslate', mode: 'translateAndCopy' });
   }
 
   public async copyOutput(): Promise<void> {
-    await this.open();
+    await this.open(true);
     this.postOrQueue({ type: 'performCopyOutput' });
   }
 
   public async clear(): Promise<void> {
-    await this.open();
+    await this.open(true);
     this.postOrQueue({ type: 'clear' });
   }
 
@@ -232,7 +230,8 @@ export class TranslatorViewProvider implements vscode.WebviewViewProvider, vscod
           ? STATUS.translationCompletedCopiedAndSentToTerminal
           : copySuccess
           ? STATUS.translationCompletedAndCopied
-          : STATUS.translationCompleted
+          : STATUS.translationCompleted,
+        sentToTerminal
       });
     } catch (error) {
       this.postStatus(this.getTranslationErrorStatus(error), true);
