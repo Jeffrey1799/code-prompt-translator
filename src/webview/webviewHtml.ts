@@ -164,8 +164,89 @@ export function getWebviewHtml(webview: vscode.Webview): string {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
       gap: 6px;
       margin-top: 4px;
+    }
+
+    .prompt-tag-bar,
+    .prompt-tags {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .prompt-tag-bar {
+      flex: 1;
+    }
+
+    .prompt-tag {
+      display: inline-flex;
+      align-items: stretch;
+      height: 20px;
+      overflow: hidden;
+      border: 1px solid var(--vscode-textLink-foreground);
+      border-radius: 10px;
+      background: var(--vscode-textCodeBlock-background);
+    }
+
+    .prompt-tag button {
+      border: 0;
+      background: transparent;
+      color: var(--vscode-textLink-foreground);
+      cursor: pointer;
+      font-family: var(--vscode-editor-font-family, monospace);
+      font-size: 10px;
+    }
+
+    .prompt-tag-insert {
+      padding: 0 6px;
+    }
+
+    .prompt-tag-remove {
+      width: 18px;
+      padding: 0;
+      color: var(--vscode-descriptionForeground) !important;
+      border-left: 1px solid var(--vscode-textLink-foreground) !important;
+    }
+
+    .prompt-tag button:hover {
+      background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,0.2));
+    }
+
+    .tag-add-btn {
+      border-style: dashed;
+      background: transparent;
+    }
+
+    .tag-editor {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .tag-editor.hidden {
+      display: none;
+    }
+
+    .tag-editor input {
+      min-width: 0;
+      flex: 1;
+      height: 24px;
+      border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+      border-radius: 4px;
+      padding: 0 7px;
+      color: var(--vscode-input-foreground);
+      background: var(--vscode-input-background);
+      font-family: var(--vscode-editor-font-family, monospace);
+      font-size: 11px;
+      outline: none;
+    }
+
+    .tag-editor input:focus {
+      border-color: var(--vscode-focusBorder);
     }
 
     #inputText {
@@ -390,8 +471,16 @@ export function getWebviewHtml(webview: vscode.Webview): string {
         <label for="inputText">Chinese Prompt</label>
       </div>
       <textarea id="inputText" spellcheck="false" placeholder="Enter Chinese coding prompt... (Enter to translate &amp; send to Agent CLI)"></textarea>
+      <div id="tagEditor" class="tag-editor hidden">
+        <input id="tagInput" type="text" maxlength="64" placeholder="/light-5s6a" aria-label="Prompt tag">
+        <button id="saveTagButton" type="button" class="mini-btn">Save</button>
+        <button id="cancelTagButton" type="button" class="mini-btn">Cancel</button>
+      </div>
       <div class="input-actions-bar">
-        <button id="clearButton" type="button" class="mini-btn" title="Clear text">Clear</button>
+        <div class="prompt-tag-bar">
+          <div id="promptTags" class="prompt-tags" aria-label="Prompt tags"></div>
+          <button id="addTagButton" type="button" class="mini-btn tag-add-btn" title="Configure a prompt tag">+Tag</button>
+        </div>
         <button id="translateCopyButton" type="button" class="submit-btn" title="Translate &amp; Copy (Enter)">
           <span>Translate &amp; Send</span>
           <span style="font-size: 12px; font-weight: bold;">↵</span>
@@ -409,7 +498,12 @@ export function getWebviewHtml(webview: vscode.Webview): string {
       const translateCopyButton = document.getElementById('translateCopyButton');
       const translateOnlyButton = document.getElementById('translateOnlyButton');
       const copyButton = document.getElementById('copyButton');
-      const clearButton = document.getElementById('clearButton');
+      const promptTagsContainer = document.getElementById('promptTags');
+      const addTagButton = document.getElementById('addTagButton');
+      const tagEditor = document.getElementById('tagEditor');
+      const tagInput = document.getElementById('tagInput');
+      const saveTagButton = document.getElementById('saveTagButton');
+      const cancelTagButton = document.getElementById('cancelTagButton');
       const setApiKeyButton = document.getElementById('setApiKeyButton');
       const appendInstructionCheckbox = document.getElementById('appendInstructionCheckbox');
       const autoCopyCheckbox = document.getElementById('autoCopyCheckbox');
@@ -439,6 +533,15 @@ export function getWebviewHtml(webview: vscode.Webview): string {
       apiKeyInput.value = typeof state.apiKeyInputValue === 'string' ? state.apiKeyInputValue : '';
       baseUrlInput.value = typeof state.baseUrlInputValue === 'string' ? state.baseUrlInputValue : '';
       modelInput.value = typeof state.modelInputValue === 'string' ? state.modelInputValue : '';
+      const promptTags = Array.isArray(state.promptTags)
+        ? state.promptTags.filter(function (tag, index, tags) {
+            return typeof tag === 'string' && /^\\/[a-zA-Z0-9_-]+$/.test(tag) && tags.indexOf(tag) === index;
+          })
+        : [];
+      tagInput.value = typeof state.tagInputValue === 'string' ? state.tagInputValue : '';
+      if (state.tagEditorVisible) {
+        tagEditor.classList.remove('hidden');
+      }
 
       function saveState() {
         vscode.setState({
@@ -452,9 +555,90 @@ export function getWebviewHtml(webview: vscode.Webview): string {
           settingsPanelVisible: !settingsPanel.classList.contains('hidden'),
           apiKeyInputValue: apiKeyInput.value,
           baseUrlInputValue: baseUrlInput.value,
-          modelInputValue: modelInput.value
+          modelInputValue: modelInput.value,
+          promptTags: promptTags,
+          tagEditorVisible: !tagEditor.classList.contains('hidden'),
+          tagInputValue: tagInput.value
         });
       }
+
+      function insertPromptTag(tag) {
+        const currentText = inputText.value.trimStart();
+        const characterAfterTag = currentText.charAt(tag.length);
+        const alreadyHasTag = currentText.startsWith(tag) && (!characterAfterTag || characterAfterTag.trim() === '');
+        if (!alreadyHasTag) {
+          inputText.value = tag + (currentText ? ' ' + currentText : ' ');
+        }
+        inputText.focus();
+        inputText.setSelectionRange(inputText.value.length, inputText.value.length);
+        autoResizeInputText();
+        saveState();
+      }
+
+      function removePromptTag(tag) {
+        const index = promptTags.indexOf(tag);
+        if (index >= 0) {
+          promptTags.splice(index, 1);
+          renderPromptTags();
+          saveState();
+        }
+      }
+
+      function renderPromptTags() {
+        promptTagsContainer.textContent = '';
+        promptTags.forEach(function (tag) {
+          const wrapper = document.createElement('span');
+          wrapper.className = 'prompt-tag';
+
+          const insertButton = document.createElement('button');
+          insertButton.type = 'button';
+          insertButton.className = 'prompt-tag-insert';
+          insertButton.textContent = tag;
+          insertButton.title = 'Insert ' + tag + ' at the start of Chinese Prompt';
+          insertButton.addEventListener('click', function () {
+            insertPromptTag(tag);
+          });
+
+          const removeButton = document.createElement('button');
+          removeButton.type = 'button';
+          removeButton.className = 'prompt-tag-remove';
+          removeButton.textContent = '\u00d7';
+          removeButton.title = 'Remove ' + tag;
+          removeButton.setAttribute('aria-label', 'Remove ' + tag);
+          removeButton.addEventListener('click', function () {
+            removePromptTag(tag);
+          });
+
+          wrapper.appendChild(insertButton);
+          wrapper.appendChild(removeButton);
+          promptTagsContainer.appendChild(wrapper);
+        });
+      }
+
+      function closeTagEditor() {
+        tagEditor.classList.add('hidden');
+        tagInput.value = '';
+        tagInput.setCustomValidity('');
+        saveState();
+      }
+
+      function savePromptTag() {
+        const tag = tagInput.value.trim();
+        if (!/^\\/[a-zA-Z0-9_-]+$/.test(tag)) {
+          tagInput.setCustomValidity('Use a slash command without spaces, for example /light-5s6a.');
+          tagInput.reportValidity();
+          return;
+        }
+
+        tagInput.setCustomValidity('');
+        if (!promptTags.includes(tag)) {
+          promptTags.push(tag);
+          renderPromptTags();
+        }
+        closeTagEditor();
+      }
+
+      renderPromptTags();
 
       function setStatus(message, isError) {
         if (statusText) {
@@ -529,7 +713,33 @@ export function getWebviewHtml(webview: vscode.Webview): string {
       });
 
       copyButton.addEventListener('click', copyOutput);
-      clearButton.addEventListener('click', clearAll);
+
+      addTagButton.addEventListener('click', function () {
+        tagEditor.classList.remove('hidden');
+        if (!tagInput.value) {
+          tagInput.value = '/';
+        }
+        tagInput.focus();
+        tagInput.setSelectionRange(tagInput.value.length, tagInput.value.length);
+        saveState();
+      });
+
+      saveTagButton.addEventListener('click', savePromptTag);
+      cancelTagButton.addEventListener('click', closeTagEditor);
+      tagInput.addEventListener('input', function () {
+        tagInput.setCustomValidity('');
+        saveState();
+      });
+      tagInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          savePromptTag();
+        } else if (event.key === 'Escape') {
+          event.preventDefault();
+          closeTagEditor();
+          addTagButton.focus();
+        }
+      });
 
       setApiKeyButton.addEventListener('click', function () {
         settingsPanel.classList.toggle('hidden');
